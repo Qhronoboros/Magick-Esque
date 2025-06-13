@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -33,12 +32,12 @@ public class CommandHandler
         return commandList;
     }
     
-    // Executes the given commands
-    public static void ExecuteCommands(List<ICommand> commandList)
+    // Executes the given commands with the actor
+    public static void ExecuteCommands(List<ICommand> commandList, GameObject actor)
     {
         foreach (ICommand command in commandList)
         {
-            command?.Execute();
+            command?.Execute(actor);
         }
     }
 }

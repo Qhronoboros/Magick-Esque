@@ -7,8 +7,8 @@ using UnityEngine.Events;
 public class PlayerController : IEntity, IHealth, IMovable, IMagicUser 
 {
     // Player Input
-    private CommandHandler _keyInputHandler;
-    private CommandHandler _mouseInputHandler;
+    private CommandHandler _moveInputHandler;
+    private CommandHandler _magicInputHandler;
 
     public Faction faction;
     
@@ -22,24 +22,34 @@ public class PlayerController : IEntity, IHealth, IMovable, IMagicUser
     public ILocomotion ActorLocomotion { get; private set; }
     public SpellCaster ActorSpellCaster { get; private set; }
 
-    public PlayerController(GameObject attachedGameObject, CommandHandler keyInputHandler, CommandHandler mouseInputHandler,
+    public PlayerController(GameObject attachedGameObject, CommandHandler moveInputHandler, CommandHandler magicInputHandler,
         ILocomotion locomotion, SpellCaster spellCaster)
     {
         AttachedGameObject = attachedGameObject;
-        _keyInputHandler = keyInputHandler;
-        _mouseInputHandler = mouseInputHandler;
+        _moveInputHandler = moveInputHandler;
+        _magicInputHandler = magicInputHandler;
         ActorLocomotion = locomotion;
         ActorSpellCaster = spellCaster;
     }
 
     public void Update(float deltaTime)
     {
-        CommandHandler.ExecuteCommands(_mouseInputHandler.ReceiveCommands());
+        CommandHandler.ExecuteCommands(_magicInputHandler.ReceiveCommands(), AttachedGameObject);
+        FaceTowardsMouse();
     }
 
     public void FixedUpdate(float deltaTime)
     {
-        CommandHandler.ExecuteCommands(_keyInputHandler.ReceiveCommands());
+        CommandHandler.ExecuteCommands(_moveInputHandler.ReceiveCommands(), AttachedGameObject);
+    }
+
+    private void FaceTowardsMouse()
+    {
+        Vector3 playerScreenPosition = Camera.main.WorldToScreenPoint(AttachedGameObject.transform.position);
+        Vector3 direction = (Input.mousePosition - playerScreenPosition).normalized;
+        direction = new Vector3(direction.x, 0.0f, direction.y).normalized;
+
+        AttachedGameObject.transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
     }
 
     public void TakeDamage(int damage)

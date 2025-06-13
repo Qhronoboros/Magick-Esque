@@ -11,7 +11,7 @@ public class MoveDirectionCommand : ICommand
         _direction = direction.normalized;
     }
 
-    public void Execute()
+    public void Execute(GameObject actor)
     {
         // Debug.Log($"Move {_direction}");
         _locomotion.ApplyForce(_direction);

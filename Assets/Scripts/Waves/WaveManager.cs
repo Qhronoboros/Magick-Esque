@@ -5,8 +5,12 @@ using UnityEngine;
 public class WaveManager
 {
     private Wave _currentWave;
+    private List<Vector3> _spawnLocations = new List<Vector3>();
     
-    
+    public WaveManager(List<Vector3> spawnLocations)
+    {
+        _spawnLocations = spawnLocations;
+    }
     
     public void Update(float deltaTime)
     {
@@ -21,4 +25,6 @@ public class WaveManager
 
         _currentWave.Update(deltaTime);
     }
+    
+    private Vector3 GetRandomSpawnLocation() => _spawnLocations[Random.Range(0, _spawnLocations.Count)];
 }

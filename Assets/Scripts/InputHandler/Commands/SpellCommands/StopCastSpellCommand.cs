@@ -9,9 +9,9 @@ public class StopCastSpellCommand : ICommand
         _spellCaster = spellCaster;
     }
 
-    public void Execute()
+    public void Execute(GameObject actor)
     {
         Debug.Log("Stop Cast Spell");
-        _spellCaster.StopCastSpell();
+        _spellCaster.StopCastSpell(actor);
     }
 }

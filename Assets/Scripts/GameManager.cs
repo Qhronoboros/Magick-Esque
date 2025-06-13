@@ -8,6 +8,9 @@ public class GameManager : MonoBehaviour
     [Header("Prefabs")]
 	public GameObject playerObjectPrefab;
 	public GameObject collisionEnemyPrefab;
+    public GameObject projectilePrefab;
+    public GameObject BeamPrefab;
+    public GameObject SprayPrefab;
 
     // For getting the mousePositionDelta
     public Mouse mouse;
@@ -16,7 +19,9 @@ public class GameManager : MonoBehaviour
 	public PlayerController player;
     public Dictionary<Type, IPrototype> prototypeDictionary = new Dictionary<Type, IPrototype>();
     public List<IEntity> enemies = new List<IEntity>();
-    // public List<IProjectile> projectiles = new List<IProjectile>();
+    
+    public List<IEntity> spellObjects = new List<IEntity>();
+
 
     [Header("Player Settings")]
     public float playerMovementSpeed;
@@ -93,13 +98,25 @@ public class GameManager : MonoBehaviour
         keyInputHandler.BindCommand(() => Input.GetKey(KeyCode.D), new MoveDirectionCommand(playerLocomotion, Vector3.right));
         keyInputHandler.BindCommand(() => Input.GetKey(KeyCode.W), new MoveDirectionCommand(playerLocomotion, Vector3.forward));
         keyInputHandler.BindCommand(() => Input.GetKey(KeyCode.S), new MoveDirectionCommand(playerLocomotion, Vector3.back));
-    
-        CommandHandler mouseInputHandler = new CommandHandler();
-        mouseInputHandler.BindCommand(() => Input.GetMouseButtonDown(0), new CastSpellCommand(playerSpellCaster));
-        mouseInputHandler.BindCommand(() => Input.GetMouseButtonUp(0), new StopCastSpellCommand(playerSpellCaster));
+
+        CommandHandler magicInputHandler = new CommandHandler();
+        magicInputHandler.BindCommand(() => Input.GetMouseButtonDown(0), new CastSpellCommand(playerSpellCaster));
+        magicInputHandler.BindCommand(() => Input.GetMouseButtonUp(0), new StopCastSpellCommand(playerSpellCaster));
+        
+        // J earth
+        // I Life
+        // K Arcane
+        // O Water
+        // L Fire
+
+        magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.J), new AddSpellCommand(playerSpellCaster, new ProjectileSpell(projectilePrefab, new EarthSpellStatsDecorator(1.0f, 5))));
+        magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.I), new AddSpellCommand(playerSpellCaster, new BeamSpell(BeamPrefab, new LifeSpellStatsDecorator(10.0f, 5))));
+        magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.K), new AddSpellCommand(playerSpellCaster, new BeamSpell(BeamPrefab, new ArcaneSpellStatsDecorator(10.0f, 5))));
+        magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.O), new AddSpellCommand(playerSpellCaster, new SpraySpell(SprayPrefab, new WaterSpellStatsDecorator(2.0f, true))));
+        magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.L), new AddSpellCommand(playerSpellCaster, new SpraySpell(SprayPrefab, new FireSpellStatsDecorator(2.0f, 1))));
     
 		// PlayerController
-		player = new PlayerController(playerGameObject, keyInputHandler, mouseInputHandler, playerLocomotion, playerSpellCaster);
+		player = new PlayerController(playerGameObject, keyInputHandler, magicInputHandler, playerLocomotion, playerSpellCaster);
 		
 		
 		// Setup Enemies
@@ -117,6 +134,7 @@ public class GameManager : MonoBehaviour
         // WaveBuilder
         
         
+        
     }
 
     // Update Game Objects
@@ -125,12 +143,14 @@ public class GameManager : MonoBehaviour
         mouse.Update();
         player.Update(Time.deltaTime);
         CallMethodFromEntities(enemies, new Action<IEntity>((entity) => entity.Update(Time.deltaTime)));
+        CallMethodFromEntities(spellObjects, new Action<IEntity>((entity) => entity.Update(Time.deltaTime)));
     }
 
     private void FixedUpdate()
     {
         player.FixedUpdate(Time.deltaTime);
         CallMethodFromEntities(enemies, new Action<IEntity>((entity) => entity.FixedUpdate(Time.deltaTime)));
+        CallMethodFromEntities(spellObjects, new Action<IEntity>((entity) => entity.FixedUpdate(Time.deltaTime)));
 	}
 	
     private void CallMethodFromEntities(List<IEntity> entities, Action<IEntity> method)

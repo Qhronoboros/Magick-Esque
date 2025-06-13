@@ -1,10 +1,8 @@
-using System.Drawing;
-
-public interface ISpellStats
+public interface ISpellStats : IPrototype
 {
-    float size { get; } 
-    int Damage { get; }
-    int Heal { get; }
-    float FireApplication { get; }
-    bool AppliesWater { get; }
+    float GetSize();
+    int GetDamage();
+    int GetHeal();
+    float GetFireApplication();
+    bool GetAppliesWater();
 }

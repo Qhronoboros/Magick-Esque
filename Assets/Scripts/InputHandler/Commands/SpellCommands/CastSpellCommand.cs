@@ -9,9 +9,9 @@ public class CastSpellCommand : ICommand
         _spellCaster = spellCaster;
     }
 
-    public void Execute()
+    public void Execute(GameObject actor)
     {
         Debug.Log("Cast Spell");
-        _spellCaster.CastSpell();
+        _spellCaster.CastSpell(actor);
     }
 }

@@ -1,37 +1,68 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class SpellCaster
 {
-    private readonly int _elementLimit = 5;
-    private List<IElement> _spellElements = new List<IElement>();
+    private readonly int _elementSpellLimit = 5;
+    private List<ISpell> _spellElements = new List<ISpell>();
 
-    public SpellCaster()
+    private ISpell _currentSpell = null;
+
+    public void AddElementSpell(ISpell addSpell)
     {
+        foreach(ISpell spell in _spellElements)
+        {
+            // If priority is the same and it is not the same element
+            // Remove both spells elements
+            if (spell.Priority == addSpell.Priority
+                && spell.ActorSpellStatsDecorator.GetType() != addSpell.ActorSpellStatsDecorator.GetType())
+            {
+                _spellElements.Remove(spell);
+                Debug.Log($"Element Count: {_spellElements.Count}");
+                
+                return;
+            }
+        }
+
+        if (_spellElements.Count >= _elementSpellLimit) return;
         
+        _spellElements.Add(addSpell);
+
+        SortListOnPriority();
+        
+        Debug.Log($"Element Count: {_spellElements.Count}");
     }
     
-    public void AddElement(IElement element)
+    // Sorts the SpellElements list based on priority (high to low)
+    public void SortListOnPriority()
     {
-        // Check if there are any elemental clashes
-        // Disable both 
-
-
-        if (_spellElements.Count >= _elementLimit) return;
+        _spellElements = _spellElements.OrderByDescending(x => x.Priority).ToList();
     }
     
-    public void CastSpell()
+    public void CastSpell(GameObject actor)
     {
+        if (_spellElements.Count == 0) return;
+
+        _currentSpell = _spellElements[0];
         
+        for (int i = 1; i < _spellElements.Count; i++)
+        {
+            _currentSpell.ActorSpellStatsDecorator = _spellElements[i].ActorSpellStatsDecorator.Decorate(_currentSpell.ActorSpellStatsDecorator) as SpellStatsDecorator;
+        }
+
+        _currentSpell.StartCastingSpell(actor);
+
+        _spellElements.Clear();
     }
     
-    public void StopCastSpell()
+    public void StopCastSpell(GameObject actor)
     {
-        
+        if (_currentSpell == null) return;
+            _currentSpell.StopCastingSpell(actor);
     }
 }
-
 
 /*
 (main damage, healing, fire application, applies water, size)
@@ -77,4 +108,5 @@ When adding more fire to spray, bigger spray
 
 Clashes:
 Life + arcane
+water + fire
 */
