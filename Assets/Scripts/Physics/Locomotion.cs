@@ -1,14 +1,16 @@
 using UnityEngine;
 
-public class Locomotion : ILocomotion
+public class Locomotion : IPhysics
 {
     private float _movementSpeed;
     private float _velocityMax;
-    public Rigidbody ActorRigidbody { get; private set; }
-    
-    public Locomotion(Rigidbody rigidbody, float movementSpeed, float velocityMax)
+    public Rigidbody ActorRigidbody { get; set; }
+    public Collider ActorCollider { get; set; }
+
+    public Locomotion(Rigidbody rigidbody, Collider collider, float movementSpeed, float velocityMax)
     {
         ActorRigidbody = rigidbody;
+        ActorCollider = collider;
         _movementSpeed = movementSpeed;
         _velocityMax = velocityMax;
     }
@@ -23,6 +25,6 @@ public class Locomotion : ILocomotion
 
     public IPrototype Clone()
     {
-        return new Locomotion(ActorRigidbody, _movementSpeed, _velocityMax);
+        return new Locomotion(ActorRigidbody, ActorCollider, _movementSpeed, _velocityMax);
     }
 }

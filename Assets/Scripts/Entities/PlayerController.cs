@@ -16,20 +16,25 @@ public class PlayerController : IEntity, IHealth, IMovable, IMagicUser
     public event System.Action OnDeath;
 
     public GameObject AttachedGameObject { get; private set; }
+    public Material AttachedMaterial { get; private set; }
     public int MaxHealth { get; private set; }
     public int Health { get; private set; }
 
-    public ILocomotion ActorLocomotion { get; private set; }
-    public SpellCaster ActorSpellCaster { get; private set; }
+    public IPhysics Physics { get; private set; }
+    public SpellCaster SpellCaster { get; private set; }
 
     public PlayerController(GameObject attachedGameObject, CommandHandler moveInputHandler, CommandHandler magicInputHandler,
-        ILocomotion locomotion, SpellCaster spellCaster)
+        IPhysics locomotion, SpellCaster spellCaster)
     {
         AttachedGameObject = attachedGameObject;
+        
+        HelperFunctions.GetMaterialFromGameObject(attachedGameObject, out Material material);
+        AttachedMaterial = material;
+        
         _moveInputHandler = moveInputHandler;
         _magicInputHandler = magicInputHandler;
-        ActorLocomotion = locomotion;
-        ActorSpellCaster = spellCaster;
+        Physics = locomotion;
+        SpellCaster = spellCaster;
     }
 
     public void Update(float deltaTime)
@@ -58,5 +63,6 @@ public class PlayerController : IEntity, IHealth, IMovable, IMagicUser
 
     public void DestroySelf()
     {
+        GameObject.Destroy(AttachedGameObject);
     }
 }

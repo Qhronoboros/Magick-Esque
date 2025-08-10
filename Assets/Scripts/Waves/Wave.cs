@@ -2,28 +2,28 @@ using UnityEngine;
 
 public class Wave
 {
-    private int _enemySpawned;
     private Timer _spawnTimer;
-    
-    public int collisionEnemyAmount;
+
+    public IEnemy enemyPrototype;
+    public int enemyAmount;
     public int amountMinPerSpawn;
     public int amountMaxPerSpawn;
     public float spawnTimeMin;
     public float spawnTimeMax;
 
-    public bool waveFinished = false;
+    public bool waveSpawnFinished = false;
     
+    private int _amountPerSpawn;
     public int AmountPerSpawn 
     {
-        get { return AmountPerSpawn; }
-        set { AmountPerSpawn = Mathf.Min(value, collisionEnemyAmount); }
+        get { return _amountPerSpawn; }
+        set { _amountPerSpawn = Mathf.Min(value, enemyAmount); }
     }
     
-    public void StartWave()
+    public Wave()
     {
         _spawnTimer = new Timer();
         _spawnTimer.OnTimerEnd += Spawn;
-
         StartSpawner();
     }
     
@@ -34,24 +34,32 @@ public class Wave
         _spawnTimer.StartTimer();
     }
     
-    public void Update(float deltaTime)
+    public bool Update(float deltaTime)
     {
         if (_spawnTimer.isCounting)
             _spawnTimer.CountTimer(deltaTime);
+
+        return waveSpawnFinished;
     }
     
     public void Spawn()
     {
-        // Spawn units
-        
+        // Spawn enemies
+        for (int i = 0; i < AmountPerSpawn; i++)
+        {
+            enemyAmount--;
+            IEnemy spawnedEnemy = enemyPrototype.Clone() as IEnemy;
+            spawnedEnemy.AttachedGameObject.transform.position = WaveManager.instance.GetRandomSpawnLocation();
+            GameManager.instance.enemies.Add(spawnedEnemy);
+        }
 
-        if (_enemySpawned < collisionEnemyAmount)
+        if (enemyAmount > 0)
         {
             StartSpawner();
         }
         else 
         {
-            waveFinished = true;
+            waveSpawnFinished = true;
         }
     }
 }

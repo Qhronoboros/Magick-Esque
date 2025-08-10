@@ -60,35 +60,37 @@ public class SpellCaster
     public void StopCastSpell(GameObject actor)
     {
         if (_currentSpell == null) return;
-            _currentSpell.StopCastingSpell(actor);
+        
+        _currentSpell.StopCastingSpell(actor);
+        _currentSpell = null;
     }
 }
 
 /*
-(main damage, healing, fire application, applies water, size)
+(main damage, healing, fire application, applies water, size, color)
 
-- Earth
+- Earth         Brown   #b35900ff
 Projectile      priority 2
 High single instance of damage
 Hold LMB to charge projectile
 More charge -> more damage and faster projectile 
 More Earth -> bigger projectile -> slower, but also more damage
 
-- Life
+- Life          Light Green #88E788
 Beam            priority 1
 Hold LMB to continuously use Beam
 Heals
 Adds healing to spells
 More Life -> more healing
 
-- Arcane
+- Arcane        Dark Red    #950606
 Beam            priority 1
 Hold LMB to continuously use Beam
 Does damage
 Adds more damage to spells
 More Arcane -> more damage
 
-- Water
+- Water         Blue    #3895D3
 Spray           priority 0
 Hold LMB to continuously use Spray
 Does not do damage
@@ -97,7 +99,7 @@ Burn + wet effect = deals an extra instance of high damage
 Pushes entities away
 When adding more water to spray, bigger spray
 
-- Fire
+- Fire          Orange  #FF5E00
 Spray           priority 0
 Does not do damage
 Hold LMB to continuously use Spray

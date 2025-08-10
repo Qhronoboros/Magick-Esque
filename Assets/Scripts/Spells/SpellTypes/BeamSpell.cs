@@ -18,9 +18,9 @@ public class BeamSpell : ISpell
 
     public void StartCastingSpell(GameObject actor)
     {
-        GameObject _spellObject = GameObject.Instantiate(SpellPrefab);
+        GameObject spellObject = GameObject.Instantiate(SpellPrefab);
         
-        _beam = new Beam(_spellObject, actor, ActorSpellStatsDecorator);
+        _beam = new Beam(spellObject, actor, ActorSpellStatsDecorator);
 
         GameManager.instance.spellObjects.Add(_beam);
     }

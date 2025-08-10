@@ -18,16 +18,20 @@ public class ProjectileSpell : ISpell
 
     public void StartCastingSpell(GameObject actor)
     {
+        GameObject spellObject = GameObject.Instantiate(SpellPrefab);
         
+        if (!HelperFunctions.GetPhysicsComponentsFromGameObject(spellObject, out Rigidbody rigidbody, out Collider collider))
+            return;
+
+        SimplePhysics simplePhysics = new SimplePhysics(rigidbody, collider);
+        _projectile = new Projectile(spellObject, actor, ActorSpellStatsDecorator, simplePhysics);
+
+        GameManager.instance.spellObjects.Add(_projectile);
     }
     
     public void StopCastingSpell(GameObject actor)
     {
-        GameObject _spellObject = GameObject.Instantiate(SpellPrefab);
-        
-        _projectile = new Projectile(_spellObject, actor, ActorSpellStatsDecorator);
-
-        GameManager.instance.spellObjects.Add(_projectile);
+        _projectile.LaunchProjectile();
     }
 
     public IPrototype Clone() => new ProjectileSpell(SpellPrefab, ActorSpellStatsDecorator.Clone() as SpellStatsDecorator);

@@ -1,3 +1,5 @@
+using UnityEngine;
+
 public interface ISpellStats : IPrototype
 {
     float GetSize();
@@ -5,4 +7,5 @@ public interface ISpellStats : IPrototype
     int GetHeal();
     float GetFireApplication();
     bool GetAppliesWater();
+    Color GetColor();
 }

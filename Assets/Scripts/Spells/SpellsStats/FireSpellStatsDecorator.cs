@@ -1,15 +1,15 @@
 using System;
+using UnityEngine;
 
 public class FireSpellStatsDecorator : SpellStatsDecorator
 {
-    public FireSpellStatsDecorator(float size, float fireApplication)
-        : base(size, 0, 0, fireApplication, false)
+    public FireSpellStatsDecorator(float size, float fireApplication, Color color)
+        : base(size, 0, 0, fireApplication, false, color)
     {
     }
     
-    // Only when Spray
-    public override float GetSize() => _decoratedSpellStats?.GetSize() + _size * 0.5f ?? + _size;
-    public override float GetFireApplication() => _decoratedSpellStats?.GetFireApplication() + _fireApplication ?? + _fireApplication;
+    public override float GetSize() => _decoratedSpellStats?.GetSize() + _size * 0.3f ?? _size;
+    public override float GetFireApplication() => _decoratedSpellStats?.GetFireApplication() + _fireApplication ?? _fireApplication;
     
-    public override IPrototype Clone() => new FireSpellStatsDecorator(_size, _fireApplication);
+    public override IPrototype Clone() => new FireSpellStatsDecorator(_size, _fireApplication, _color);
 }

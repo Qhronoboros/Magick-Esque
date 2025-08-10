@@ -1,41 +1,77 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
+using TMPro;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
     [Header("Prefabs")]
+	public GameObject platformPrefab;
 	public GameObject playerObjectPrefab;
 	public GameObject collisionEnemyPrefab;
     public GameObject projectilePrefab;
-    public GameObject BeamPrefab;
-    public GameObject SprayPrefab;
+    public GameObject beamPrefab;
+    public GameObject sprayPrefab;
+    public GameObject sprayParticlePrefab;
 
-    // For getting the mousePositionDelta
-    public Mouse mouse;
-
-    [Header("Game Objects")]
-	public PlayerController player;
-    public Dictionary<Type, IPrototype> prototypeDictionary = new Dictionary<Type, IPrototype>();
-    public List<IEntity> enemies = new List<IEntity>();
-    
-    public List<IEntity> spellObjects = new List<IEntity>();
-
+    [Header("UI Objects")]
+    public GameObject MainMenuObject;
+    public GameObject GameUIObject;
+    public TMP_Text waveText;
+    public TMP_Text enemyCountText;
+    public TMP_Text playerHealthText;
+    public GameObject ResultObject;
 
     [Header("Player Settings")]
     public float playerMovementSpeed;
     public float playerVelocityMax;
 
     [Header("Wave Settings")]
-    public int waveAmount;
+    public int startEnemyAmount;
+    public int enemyAmountWaveIncrease;
+    public int startAmountPerSpawnMin;
+    public int startAmountPerSpawnMax;
+    public int amountPerSpawnWaveIncrease;
+    public List<Vector3> spawnLocations;
 	
     [Header("Enemy Settings")]
     public float collsionEnemyMovementSpeed;
     public float collsionEnemyVelocityMax;
+
+    // For getting the mousePositionDelta
+    public Mouse mouse;
+    public bool gameStarted;
+
+    [Header("Misc")]
+    public LayerMask enemyLayer;
+
+    [Header("Game Objects")]
+    [NonSerialized] public GameObject platform;
+	[NonSerialized] public PlayerController player;
+    [NonSerialized] public List<IEntity> enemies = new List<IEntity>();
+    [NonSerialized] public List<IEntity> spellObjects = new List<IEntity>();
+
+    // Managers
+    public UIManager uiManager;
+    public WaveManager waveManager;
 	
 	// Singleton
 	public static GameManager instance { get; private set;}
+
+    private int _enemyCount;
+    public int EnemyCount 
+    {
+        get { return _enemyCount; }
+        set
+        {
+            if (value != _enemyCount)
+            {
+                _enemyCount = value;
+                OnEnemyCountChanged?.Invoke(value);
+            }
+        }
+    }
+	public event System.Action<int> OnEnemyCountChanged;
 	
 	private void Awake()
 	{
@@ -48,9 +84,37 @@ public class GameManager : MonoBehaviour
 		}
 	}
 
-	// Setup game
-    private void Start()
+    public void StartGame()
     {
+        // Remove Main Menu
+        MainMenuObject.SetActive(false);
+    
+        // Start Game
+        SetupGame();
+    }
+
+    public void QuitGame()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
+
+    public void StopGame()
+    {
+        // Reset Game + Result Menu
+        ResetGame();
+        GameUIObject.SetActive(false);
+        ResultObject.SetActive(false);
+
+        // Add Main Menu
+        MainMenuObject.SetActive(true);
+    }
+
+    private void SetupGame()
+    {   
         // // Setup Projectiles Prototypes
         // IProjectile bullet = new Projectile(Instantiate(bulletObjectPrefab), Vector3.zero, Vector3.zero, 1.0f,
         // 	MovementOverTime.CONSTANT, TargetFinding.NONE, false);
@@ -80,6 +144,9 @@ public class GameManager : MonoBehaviour
         // 	new PowerUp(Instantiate(PowerUpObjectPrefab), new ProjectileAmountDecorator(1),
         // 		ShooterLaunch.CIRCLE, MovementOverTime.ACCELERATED, TargetFinding.CLOSEST)
         // };
+        
+        // Instantiate main Platform
+        platform = Instantiate(platformPrefab);
 
         mouse = new Mouse();
 
@@ -87,9 +154,10 @@ public class GameManager : MonoBehaviour
         GameObject playerGameObject = Instantiate(playerObjectPrefab);
 
         // Locomotion
-        if (!GetComponentFromGameObject(playerGameObject, out Rigidbody playerRigidbody)) return;
-        
-        Locomotion playerLocomotion = new Locomotion(playerRigidbody, playerMovementSpeed, playerVelocityMax);
+        if (!HelperFunctions.GetPhysicsComponentsFromGameObject(playerGameObject, out Rigidbody playerRigidbody, out Collider playerCollider))
+            return;
+            
+        Locomotion playerLocomotion = new Locomotion(playerRigidbody, playerCollider, playerMovementSpeed, playerVelocityMax);
         SpellCaster playerSpellCaster = new SpellCaster();
 		
         // CommandHandler
@@ -102,82 +170,102 @@ public class GameManager : MonoBehaviour
         CommandHandler magicInputHandler = new CommandHandler();
         magicInputHandler.BindCommand(() => Input.GetMouseButtonDown(0), new CastSpellCommand(playerSpellCaster));
         magicInputHandler.BindCommand(() => Input.GetMouseButtonUp(0), new StopCastSpellCommand(playerSpellCaster));
-        
+
         // J earth
         // I Life
         // K Arcane
         // O Water
         // L Fire
 
-        magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.J), new AddSpellCommand(playerSpellCaster, new ProjectileSpell(projectilePrefab, new EarthSpellStatsDecorator(1.0f, 5))));
-        magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.I), new AddSpellCommand(playerSpellCaster, new BeamSpell(BeamPrefab, new LifeSpellStatsDecorator(10.0f, 5))));
-        magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.K), new AddSpellCommand(playerSpellCaster, new BeamSpell(BeamPrefab, new ArcaneSpellStatsDecorator(10.0f, 5))));
-        magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.O), new AddSpellCommand(playerSpellCaster, new SpraySpell(SprayPrefab, new WaterSpellStatsDecorator(2.0f, true))));
-        magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.L), new AddSpellCommand(playerSpellCaster, new SpraySpell(SprayPrefab, new FireSpellStatsDecorator(2.0f, 1))));
+        ProjectileSpell earthSpell = new ProjectileSpell(projectilePrefab, new EarthSpellStatsDecorator(1.0f, 5, new Color(0.70f, 0.35f, 0.0f)));
+        magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.J), new AddSpellCommand(playerSpellCaster, earthSpell));
+
+        BeamSpell lifeSpell = new BeamSpell(beamPrefab, new LifeSpellStatsDecorator(0.5f, 5, new Color(0.54f, 0.91f, 0.54f)));
+        magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.I), new AddSpellCommand(playerSpellCaster, lifeSpell));
+
+        BeamSpell arcaneSpell = new BeamSpell(beamPrefab, new ArcaneSpellStatsDecorator(0.5f, 5, new Color(0.59f, 0.03f, 0.03f)));
+        magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.K), new AddSpellCommand(playerSpellCaster, arcaneSpell));
+
+        SpraySpell waterSpell = new SpraySpell(sprayPrefab, sprayParticlePrefab, new WaterSpellStatsDecorator(0.75f, true, new Color(0.22f, 0.59f, 0.83f)));
+        magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.O), new AddSpellCommand(playerSpellCaster, waterSpell));
+
+        SpraySpell fireSpell = new SpraySpell(sprayPrefab, sprayParticlePrefab, new FireSpellStatsDecorator(0.75f, 1, new Color(1.0f, 0.37f, 0.0f)));
+        magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.L), new AddSpellCommand(playerSpellCaster, fireSpell));
     
 		// PlayerController
 		player = new PlayerController(playerGameObject, keyInputHandler, magicInputHandler, playerLocomotion, playerSpellCaster);
-		
 		
 		// Setup Enemies
         GameObject collisionEnemyGameObject = Instantiate(collisionEnemyPrefab);
         collisionEnemyGameObject.SetActive(false);
 
-        if (!GetComponentFromGameObject(collisionEnemyGameObject, out Rigidbody collisionEnemyRigidbody)) return;
-
-        Locomotion collisionEnemyLocomotion = new Locomotion(collisionEnemyRigidbody, collsionEnemyMovementSpeed, collsionEnemyVelocityMax);
+        if (!HelperFunctions.GetPhysicsComponentsFromGameObject(collisionEnemyGameObject, out Rigidbody collisionEnemyRigidbody, out Collider collisionEnemyCollider))
+            return;
+        
+        Locomotion collisionEnemyLocomotion = new Locomotion(collisionEnemyRigidbody, collisionEnemyCollider, collsionEnemyMovementSpeed, collsionEnemyVelocityMax);
         CollisionEnemy collisionEnemyScript = new CollisionEnemy(collisionEnemyGameObject, collisionEnemyLocomotion, playerGameObject);
 
-        prototypeDictionary.Add(typeof(CollisionEnemy), collisionEnemyScript);
+        Dictionary<Type, IEnemy> enemyDictionary = new Dictionary<Type, IEnemy>
+        {
+            { typeof(CollisionEnemy), collisionEnemyScript }
+        };
+
+        // WaveManager
+        waveManager = new WaveManager(enemyDictionary, spawnLocations, startEnemyAmount, enemyAmountWaveIncrease,
+            startAmountPerSpawnMin, startAmountPerSpawnMax, amountPerSpawnWaveIncrease);
+
+        // UI
+        GameUIObject.SetActive(true);
+        uiManager = new UIManager(waveText, enemyCountText);
+        waveManager.OnWaveChanged += uiManager.UpdateWaveText;
+        OnEnemyCountChanged += uiManager.UpdateEnemyCountText;
         
-        
-        // WaveBuilder
-        
-        
-        
+        gameStarted = true;
     }
 
     // Update Game Objects
     private void Update()
     {
+        if (!gameStarted) return;
         mouse.Update();
         player.Update(Time.deltaTime);
-        CallMethodFromEntities(enemies, new Action<IEntity>((entity) => entity.Update(Time.deltaTime)));
-        CallMethodFromEntities(spellObjects, new Action<IEntity>((entity) => entity.Update(Time.deltaTime)));
+        HelperFunctions.CallMethodFromEntities(enemies, new Action<IEntity>((entity) => entity.Update(Time.deltaTime)));
+        HelperFunctions.CallMethodFromEntities(spellObjects, new Action<IEntity>((entity) => entity.Update(Time.deltaTime)));
+
+        EnemyCount = enemies.Count;
+
+        waveManager.Update(Time.deltaTime);
     }
 
     private void FixedUpdate()
     {
+        if (!gameStarted) return;
         player.FixedUpdate(Time.deltaTime);
-        CallMethodFromEntities(enemies, new Action<IEntity>((entity) => entity.FixedUpdate(Time.deltaTime)));
-        CallMethodFromEntities(spellObjects, new Action<IEntity>((entity) => entity.FixedUpdate(Time.deltaTime)));
+        HelperFunctions.CallMethodFromEntities(enemies, new Action<IEntity>((entity) => entity.FixedUpdate(Time.deltaTime)));
+        HelperFunctions.CallMethodFromEntities(spellObjects, new Action<IEntity>((entity) => entity.FixedUpdate(Time.deltaTime)));
 	}
-	
-    private void CallMethodFromEntities(List<IEntity> entities, Action<IEntity> method)
-    {
-        for (int i = 0; i < entities.Count; i++)
-        {
-			IEntity entity = entities[i];
-			
-            if (entity.AttachedGameObject == null) 
-            {
-                entities.Remove(entity);
-                i--;
-                continue;
-            }
-
-            method(entity);
-        }
-    }
     
-	public static bool GetComponentFromGameObject<T>(GameObject gameObject, out T component)
+    public void ResetGame()
     {
-        gameObject.TryGetComponent(out component);
-        if (component == null)
+        foreach(IDestroyable enemy in enemies)
         {
-            Debug.LogError($"{gameObject.name} does not have {typeof(T)}");
-            return false;
+            enemy.DestroySelf();
         }
-        return true;
+        enemies.Clear();
+        EnemyCount = 0;
+        
+        foreach(IDestroyable spellObject in spellObjects)
+        {
+            spellObject.DestroySelf();
+        }
+        spellObjects.Clear();
+        
+        GameObject.Destroy(platform);
+        player.DestroySelf();
+        
+        WaveManager.ResetSingleton();
+        waveManager = null;
+        UIManager.ResetSingleton();
+        uiManager = null;
     }
 }

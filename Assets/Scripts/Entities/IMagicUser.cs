@@ -1,4 +1,4 @@
 public interface IMagicUser
 {
-    SpellCaster ActorSpellCaster { get; }
+    SpellCaster SpellCaster { get; }
 }

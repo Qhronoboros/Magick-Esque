@@ -2,10 +2,10 @@ using UnityEngine;
 
 public class MoveDirectionCommand : ICommand
 {
-    private ILocomotion _locomotion;
+    private IPhysics _locomotion;
     private Vector3 _direction;
 
-    public MoveDirectionCommand(ILocomotion locomotion, Vector3 direction)
+    public MoveDirectionCommand(IPhysics locomotion, Vector3 direction)
     {
         _locomotion = locomotion;
         _direction = direction.normalized;

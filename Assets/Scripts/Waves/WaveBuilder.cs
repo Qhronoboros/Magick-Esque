@@ -2,9 +2,15 @@ public class WaveBuilder
 {
     private Wave _wave = new Wave();
 
-    public WaveBuilder SetCollisionEnemyAmount(int amount)
+    public WaveBuilder SetEnemyType(IEnemy enemyPrototype)
     {
-        _wave.collisionEnemyAmount = amount;
+        _wave.enemyPrototype = enemyPrototype;
+        return this;
+    }
+
+    public WaveBuilder SetEnemyAmount(int amount)
+    {
+        _wave.enemyAmount = amount;
         return this;
     }
     

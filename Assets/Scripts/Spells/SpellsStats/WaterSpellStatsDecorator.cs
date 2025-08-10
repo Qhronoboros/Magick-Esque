@@ -1,14 +1,14 @@
 using System;
+using UnityEngine;
 
 public class WaterSpellStatsDecorator : SpellStatsDecorator
 {
-    public WaterSpellStatsDecorator(float size, bool appliesWater)
-        : base(size, 0, 0, 0.0f, appliesWater)
+    public WaterSpellStatsDecorator(float size, bool appliesWater, Color color)
+        : base(size, 0, 0, 0.0f, appliesWater, color)
     {
     }
 
-    // Only when Spray
-    public override float GetSize() => _decoratedSpellStats?.GetSize() + _size * 0.5f ?? + _size;
+    public override float GetSize() => _decoratedSpellStats?.GetSize() + _size * 0.3f ?? _size;
 
-    public override IPrototype Clone() => new WaterSpellStatsDecorator(_size, _appliesWater);
+    public override IPrototype Clone() => new WaterSpellStatsDecorator(_size, _appliesWater, _color);
 }

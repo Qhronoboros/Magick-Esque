@@ -1,4 +1,4 @@
 public interface IMovable
 {
-    ILocomotion ActorLocomotion { get; }
+    IPhysics Physics { get; }
 }
