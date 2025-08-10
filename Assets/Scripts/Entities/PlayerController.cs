@@ -12,7 +12,7 @@ public class PlayerController : IEntity, IHealth, IMovable, IMagicUser
 
     public Faction faction;
     
-    public event System.Action<int, int> OnHit;
+    public event System.Action<int, int, Vector3, Color> OnHit;
     public event System.Action OnDeath;
 
     public GameObject AttachedGameObject { get; private set; }
@@ -24,7 +24,7 @@ public class PlayerController : IEntity, IHealth, IMovable, IMagicUser
     public SpellCaster SpellCaster { get; private set; }
 
     public PlayerController(GameObject attachedGameObject, CommandHandler moveInputHandler, CommandHandler magicInputHandler,
-        IPhysics locomotion, SpellCaster spellCaster)
+        IPhysics locomotion, SpellCaster spellCaster, int maxHealth)
     {
         AttachedGameObject = attachedGameObject;
         
@@ -35,6 +35,11 @@ public class PlayerController : IEntity, IHealth, IMovable, IMagicUser
         _magicInputHandler = magicInputHandler;
         Physics = locomotion;
         SpellCaster = spellCaster;
+        
+        MaxHealth = Health = maxHealth;
+        
+        OnHit += UIManager.instance.UpdatePlayerHealthText;
+        OnDeath += GameManager.instance.ShowResult;
     }
 
     public void Update(float deltaTime)
@@ -57,8 +62,19 @@ public class PlayerController : IEntity, IHealth, IMovable, IMagicUser
         AttachedGameObject.transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
     }
 
-    public void TakeDamage(int damage)
+    public void TakeDamage(int damage, Color damageColor)
     {
+        if (AttachedGameObject == null) return;
+        
+        Health -= damage;
+        OnHit?.Invoke(Health, MaxHealth, AttachedGameObject.transform.position, damageColor);
+        
+        if (Health <= 0)
+        {
+            Debug.Log($"{AttachedGameObject.name} died");
+            OnDeath?.Invoke();
+            DestroySelf();
+        }
     }
 
     public void DestroySelf()

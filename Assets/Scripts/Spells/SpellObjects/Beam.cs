@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class Beam : ISpellObject
@@ -47,7 +48,17 @@ public class Beam : ISpellObject
             return;
         }
             
-        Debug.Log($"Hit {hit.collider.name}");
+        List<IEntity> enemies = GameManager.instance.enemies.ToList();
+        IEntity foundEnemy = enemies.Find(x => x.AttachedGameObject == hit.collider.gameObject);
+        
+        IElementStatus elementStatusEntity = foundEnemy as IElementStatus;
+        if (elementStatusEntity != null)
+            elementStatusEntity.ApplyElement(this);
+        
+        IHealth healthEntity = foundEnemy as IHealth;
+        if (healthEntity != null)
+            healthEntity.TakeDamage(ActorSpellStats.GetDamage(), ActorSpellStats.GetColor());
+        
         _currentDistance = Vector3.Distance(Actor.transform.position, hit.point);
     }
 

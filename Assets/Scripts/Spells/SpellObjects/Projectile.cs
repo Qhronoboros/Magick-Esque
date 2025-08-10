@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.WSA;
 
@@ -9,6 +10,9 @@ public class Projectile : ISpellObject, IMovable
     private Timer _launchTimer;
     private bool _launchMaxed;
     private bool _launched;
+    private float _launchPower;
+    
+    private List<IEntity> _enemiesHit = new List<IEntity>();
 
     public GameObject AttachedGameObject { get; private set; }
     public Material AttachedMaterial { get; private set; }
@@ -59,8 +63,8 @@ public class Projectile : ISpellObject, IMovable
         _launched = true;
         Physics.ActorRigidbody.useGravity = true;
         
-        float launchPower = _launchMaxed ? 1.0f : _launchTimer.elapsedTime / _launchTimer.timerDuration;
-        Physics.ApplyForce(AttachedGameObject.transform.forward * 75.0f * launchPower);
+        _launchPower = _launchMaxed ? 1.0f : _launchTimer.elapsedTime / _launchTimer.timerDuration;
+        Physics.ApplyForce(AttachedGameObject.transform.forward * 75.0f * _launchPower);
         _lifeTimer.StartTimer();
     }
 
@@ -76,7 +80,42 @@ public class Projectile : ISpellObject, IMovable
     public void FixedUpdate(float deltaTime)
     {
         if (!_launched)
+        {
             FollowPlayer();
+        }
+        else
+        {
+            DetectEnemies();
+        }
+    }
+    
+    private void DetectEnemies()
+    {
+        List<IEntity> enemies = GameManager.instance.enemies.ToList();
+        
+        foreach(IEntity enemy in enemies)
+        {
+            if (_enemiesHit.Contains(enemy)) continue;
+
+            // Check collisions with enemies
+            Vector3 enemyPosition = enemy.AttachedGameObject.transform.position;
+            Vector3 closestPoint = Physics.ActorCollider.ClosestPoint(enemyPosition);
+            float distance = Vector3.Distance(closestPoint, enemyPosition);
+            if (distance <= 0.5f) 
+            {
+                Debug.Log($"{distance} closestPoint");
+                
+                IElementStatus elementStatusEntity = enemy as IElementStatus;
+                if (elementStatusEntity != null)
+                    elementStatusEntity.ApplyElement(this);
+                    
+                IHealth healthEntity = enemy as IHealth;
+                if (healthEntity != null)
+                    healthEntity.TakeDamage((int)(ActorSpellStats.GetDamage() * _launchPower), ActorSpellStats.GetColor());
+                    
+                _enemiesHit.Add(enemy);
+            }
+        }
     }
     
     public void DestroySelf()

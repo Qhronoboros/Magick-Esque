@@ -4,7 +4,7 @@ using UnityEngine;
 public class LifeSpellStatsDecorator : SpellStatsDecorator
 {
     public LifeSpellStatsDecorator(float size, int heal, Color color)
-        : base(size, 0, heal, 0.0f, false, color)
+        : base(size, 0, heal, 0.0f, false, color, null)
     {
     }
     

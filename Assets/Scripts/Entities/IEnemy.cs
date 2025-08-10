@@ -1,7 +1,7 @@
 using UnityEngine;
 
-public interface IEnemy : IEntity, IHealth, IMovable, IPrototype
+public interface IEnemy : IEntity, IHealth, IElementStatus, IMovable, IPrototype
 {
-    GameObject Target { get; }
+    IEntity Target { get; }
     Collider TargetCollider { get; }
 }

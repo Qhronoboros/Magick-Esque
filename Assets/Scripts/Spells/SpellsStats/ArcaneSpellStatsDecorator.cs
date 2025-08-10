@@ -4,7 +4,7 @@ using UnityEngine;
 public class ArcaneSpellStatsDecorator : SpellStatsDecorator
 {
     public ArcaneSpellStatsDecorator(float size, int damage, Color color)
-        : base(size, damage, 0, 0.0f, false, color)
+        : base(size, damage, 0, 0.0f, false, color, null)
     {
     }
     

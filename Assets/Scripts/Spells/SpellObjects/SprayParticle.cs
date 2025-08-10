@@ -63,15 +63,10 @@ public class SprayParticle : ISpellObject, IMovable
             if (Vector3.Distance(AttachedGameObject.transform.position, entity.AttachedGameObject.transform.position)
                 <= AttachedGameObject.transform.lossyScale.x)
             {
-                // Do collide stuff
-                // Damage
-                // Heal
-                // Fire Application Amount
-                // Water Application
-                // int healthChange = 
-                
-
-                
+                IElementStatus elementStatusEntity = entity as IElementStatus;
+                if (elementStatusEntity != null)
+                    elementStatusEntity.ApplyElement(this);
+                    
                 return entity;
             }
         }

@@ -13,14 +13,19 @@ public class GameManager : MonoBehaviour
     public GameObject beamPrefab;
     public GameObject sprayPrefab;
     public GameObject sprayParticlePrefab;
+    public GameObject damageTextPrefab;
 
     [Header("UI Objects")]
     public GameObject MainMenuObject;
+    // Game UI
     public GameObject GameUIObject;
     public TMP_Text waveText;
     public TMP_Text enemyCountText;
     public TMP_Text playerHealthText;
+    // Result Screen
     public GameObject ResultObject;
+    public TMP_Text waveReachedText;
+    public TMP_Text enemiesKilledText;
 
     [Header("Player Settings")]
     public float playerMovementSpeed;
@@ -38,14 +43,15 @@ public class GameManager : MonoBehaviour
     public float collsionEnemyMovementSpeed;
     public float collsionEnemyVelocityMax;
 
-    // For getting the mousePositionDelta
-    public Mouse mouse;
-    public bool gameStarted;
 
     [Header("Misc")]
+    // For getting the mousePositionDelta
+    public bool gameStarted;
     public LayerMask enemyLayer;
+    public int enemiesKilled;
+    public Mouse mouse;
 
-    [Header("Game Objects")]
+    // Game Objects
     [NonSerialized] public GameObject platform;
 	[NonSerialized] public PlayerController player;
     [NonSerialized] public List<IEntity> enemies = new List<IEntity>();
@@ -86,10 +92,9 @@ public class GameManager : MonoBehaviour
 
     public void StartGame()
     {
-        // Remove Main Menu
+        ResultObject.SetActive(false);
         MainMenuObject.SetActive(false);
     
-        // Start Game
         SetupGame();
     }
 
@@ -102,49 +107,29 @@ public class GameManager : MonoBehaviour
 #endif
     }
 
-    public void StopGame()
+    public void GoToMenu()
     {
-        // Reset Game + Result Menu
-        ResetGame();
         GameUIObject.SetActive(false);
         ResultObject.SetActive(false);
 
-        // Add Main Menu
         MainMenuObject.SetActive(true);
+    }
+
+    public void ShowResult()
+    {
+        gameStarted = false;
+        ResultObject.SetActive(true);
+        waveReachedText.text = $"Wave Reached: {waveManager.WaveCount}";
+        enemiesKilledText.text = $"Enemies Killed: {enemiesKilled}";
+        
+        ResetGame();
     }
 
     private void SetupGame()
     {   
-        // // Setup Projectiles Prototypes
-        // IProjectile bullet = new Projectile(Instantiate(bulletObjectPrefab), Vector3.zero, Vector3.zero, 1.0f,
-        // 	MovementOverTime.CONSTANT, TargetFinding.NONE, false);
-        // IProjectile rocket = new Projectile(Instantiate(rocketObjectPrefab), Vector3.zero, Vector3.zero, 1.0f,
-        // 	MovementOverTime.ACCELERATED, TargetFinding.CLOSEST, false);
-
-        // // Setup Attacker and Weapons
-        // Attacker attacker = new Attacker(1);
-
-        // attacker.AddWeapon(new Weapon(new WeaponStats(1.0f, 2.0f, 1), ShooterLaunch.STRAIGHT, bullet));
-        // attacker.AddWeapon(new Weapon(new WeaponStats(2.0f, 0.5f, 1), ShooterLaunch.CIRCLE, rocket));
-
-        // // Setup PowerUp Prototypes
-        // List<IPowerUp> PowerUpPrototypes = new List<IPowerUp>()
-        // {
-        // 	new PowerUp(Instantiate(PowerUpObjectPrefab), new AttackMultiplierDecorator(0.5f),
-        // 		ShooterLaunch.STRAIGHT, MovementOverTime.CONSTANT, TargetFinding.NONE),
-        // 	new PowerUp(Instantiate(PowerUpObjectPrefab), new AttackSpeedDecorator(1.0f),
-        // 		ShooterLaunch.STRAIGHT, MovementOverTime.CONSTANT, TargetFinding.NONE),
-        // 	new PowerUp(Instantiate(PowerUpObjectPrefab), new ProjectileAmountDecorator(1),
-        // 		ShooterLaunch.STRAIGHT, MovementOverTime.CONSTANT, TargetFinding.NONE),
-
-        // 	new PowerUp(Instantiate(PowerUpObjectPrefab), new AttackMultiplierDecorator(1.0f),
-        // 		ShooterLaunch.CIRCLE, MovementOverTime.ACCELERATED, TargetFinding.CLOSEST),
-        // 	new PowerUp(Instantiate(PowerUpObjectPrefab), new AttackSpeedDecorator(0.5f),
-        // 		ShooterLaunch.CIRCLE, MovementOverTime.ACCELERATED, TargetFinding.CLOSEST),
-        // 	new PowerUp(Instantiate(PowerUpObjectPrefab), new ProjectileAmountDecorator(1),
-        // 		ShooterLaunch.CIRCLE, MovementOverTime.ACCELERATED, TargetFinding.CLOSEST)
-        // };
-        
+        // Create UIManager
+        uiManager = new UIManager(damageTextPrefab, waveText, enemyCountText, playerHealthText);
+    
         // Instantiate main Platform
         platform = Instantiate(platformPrefab);
 
@@ -177,7 +162,7 @@ public class GameManager : MonoBehaviour
         // O Water
         // L Fire
 
-        ProjectileSpell earthSpell = new ProjectileSpell(projectilePrefab, new EarthSpellStatsDecorator(1.0f, 5, new Color(0.70f, 0.35f, 0.0f)));
+        ProjectileSpell earthSpell = new ProjectileSpell(projectilePrefab, new EarthSpellStatsDecorator(1.5f, 100, new Color(0.70f, 0.35f, 0.0f)));
         magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.J), new AddSpellCommand(playerSpellCaster, earthSpell));
 
         BeamSpell lifeSpell = new BeamSpell(beamPrefab, new LifeSpellStatsDecorator(0.5f, 5, new Color(0.54f, 0.91f, 0.54f)));
@@ -186,14 +171,18 @@ public class GameManager : MonoBehaviour
         BeamSpell arcaneSpell = new BeamSpell(beamPrefab, new ArcaneSpellStatsDecorator(0.5f, 5, new Color(0.59f, 0.03f, 0.03f)));
         magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.K), new AddSpellCommand(playerSpellCaster, arcaneSpell));
 
-        SpraySpell waterSpell = new SpraySpell(sprayPrefab, sprayParticlePrefab, new WaterSpellStatsDecorator(0.75f, true, new Color(0.22f, 0.59f, 0.83f)));
+        Color waterColor = new Color(0.22f, 0.59f, 0.83f);
+        IElementEffect waterElementEffect = new WaterElementEffect(waterColor);
+        SpraySpell waterSpell = new SpraySpell(sprayPrefab, sprayParticlePrefab, new WaterSpellStatsDecorator(0.75f, true, waterColor, waterElementEffect));
         magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.O), new AddSpellCommand(playerSpellCaster, waterSpell));
 
-        SpraySpell fireSpell = new SpraySpell(sprayPrefab, sprayParticlePrefab, new FireSpellStatsDecorator(0.75f, 1, new Color(1.0f, 0.37f, 0.0f)));
+        Color fireColor = new Color(1.0f, 0.37f, 0.0f);
+        IElementEffect fireElementEffect = new FireElementEffect(fireColor);
+        SpraySpell fireSpell = new SpraySpell(sprayPrefab, sprayParticlePrefab, new FireSpellStatsDecorator(0.75f, 1, fireColor, fireElementEffect));
         magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.L), new AddSpellCommand(playerSpellCaster, fireSpell));
     
 		// PlayerController
-		player = new PlayerController(playerGameObject, keyInputHandler, magicInputHandler, playerLocomotion, playerSpellCaster);
+		player = new PlayerController(playerGameObject, keyInputHandler, magicInputHandler, playerLocomotion, playerSpellCaster, 300);
 		
 		// Setup Enemies
         GameObject collisionEnemyGameObject = Instantiate(collisionEnemyPrefab);
@@ -203,7 +192,7 @@ public class GameManager : MonoBehaviour
             return;
         
         Locomotion collisionEnemyLocomotion = new Locomotion(collisionEnemyRigidbody, collisionEnemyCollider, collsionEnemyMovementSpeed, collsionEnemyVelocityMax);
-        CollisionEnemy collisionEnemyScript = new CollisionEnemy(collisionEnemyGameObject, collisionEnemyLocomotion, playerGameObject);
+        CollisionEnemy collisionEnemyScript = new CollisionEnemy(collisionEnemyGameObject, collisionEnemyLocomotion, 2, 200, player);
 
         Dictionary<Type, IEnemy> enemyDictionary = new Dictionary<Type, IEnemy>
         {
@@ -214,11 +203,11 @@ public class GameManager : MonoBehaviour
         waveManager = new WaveManager(enemyDictionary, spawnLocations, startEnemyAmount, enemyAmountWaveIncrease,
             startAmountPerSpawnMin, startAmountPerSpawnMax, amountPerSpawnWaveIncrease);
 
-        // UI
+        // Setup UI
         GameUIObject.SetActive(true);
-        uiManager = new UIManager(waveText, enemyCountText);
         waveManager.OnWaveChanged += uiManager.UpdateWaveText;
         OnEnemyCountChanged += uiManager.UpdateEnemyCountText;
+        uiManager.UpdatePlayerHealthText(player.Health, player.MaxHealth, Vector3.zero, new Color());
         
         gameStarted = true;
     }
@@ -253,6 +242,7 @@ public class GameManager : MonoBehaviour
         }
         enemies.Clear();
         EnemyCount = 0;
+        enemiesKilled = 0;
         
         foreach(IDestroyable spellObject in spellObjects)
         {

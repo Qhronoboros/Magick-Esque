@@ -8,4 +8,5 @@ public interface ISpellStats : IPrototype
     float GetFireApplication();
     bool GetAppliesWater();
     Color GetColor();
+    IElementEffect GetElementEffect();
 }
