@@ -10,6 +10,8 @@ public class SpellCaster
 
     private ISpell _currentSpell = null;
 
+    public event System.Action<List<ISpell>> OnSpellElementsChanged;
+
     public void AddElementSpell(ISpell addSpell)
     {
         foreach(ISpell spell in _spellElements)
@@ -33,6 +35,8 @@ public class SpellCaster
         SortListOnPriority();
         
         Debug.Log($"Element Count: {_spellElements.Count}");
+
+        OnSpellElementsChanged?.Invoke(_spellElements);
     }
     
     // Sorts the SpellElements list based on priority (high to low)
@@ -55,6 +59,8 @@ public class SpellCaster
         _currentSpell.StartCastingSpell(actor);
 
         _spellElements.Clear();
+        
+        OnSpellElementsChanged?.Invoke(_spellElements);
     }
     
     public void StopCastSpell(GameObject actor)
@@ -74,7 +80,7 @@ Projectile      priority 2
 High single instance of damage
 Hold LMB to charge projectile
 More charge -> more damage and faster projectile 
-More Earth -> bigger projectile -> slower, but also more damage
+More Earth -> bigger projectile and more damage
 
 - Life          Light Green #88E788
 Beam            priority 1

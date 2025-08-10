@@ -17,11 +17,14 @@ public class GameManager : MonoBehaviour
 
     [Header("UI Objects")]
     public GameObject MainMenuObject;
+    
     // Game UI
     public GameObject GameUIObject;
     public TMP_Text waveText;
     public TMP_Text enemyCountText;
     public TMP_Text playerHealthText;
+    public TMP_Text spellElementsText;
+    
     // Result Screen
     public GameObject ResultObject;
     public TMP_Text waveReachedText;
@@ -128,7 +131,7 @@ public class GameManager : MonoBehaviour
     private void SetupGame()
     {   
         // Create UIManager
-        uiManager = new UIManager(damageTextPrefab, waveText, enemyCountText, playerHealthText);
+        uiManager = new UIManager(damageTextPrefab, waveText, enemyCountText, playerHealthText, spellElementsText);
     
         // Instantiate main Platform
         platform = Instantiate(platformPrefab);
@@ -144,6 +147,7 @@ public class GameManager : MonoBehaviour
             
         Locomotion playerLocomotion = new Locomotion(playerRigidbody, playerCollider, playerMovementSpeed, playerVelocityMax);
         SpellCaster playerSpellCaster = new SpellCaster();
+        playerSpellCaster.OnSpellElementsChanged += uiManager.UpdateSpellElementsText;
 		
         // CommandHandler
         CommandHandler keyInputHandler = new CommandHandler();
@@ -162,23 +166,23 @@ public class GameManager : MonoBehaviour
         // O Water
         // L Fire
 
-        ProjectileSpell earthSpell = new ProjectileSpell(projectilePrefab, new EarthSpellStatsDecorator(1.5f, 100, new Color(0.70f, 0.35f, 0.0f)));
+        ProjectileSpell earthSpell = new ProjectileSpell(projectilePrefab, new EarthSpellStatsDecorator("Earth", 1.5f, 100, new Color(0.70f, 0.35f, 0.0f)));
         magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.J), new AddSpellCommand(playerSpellCaster, earthSpell));
 
-        BeamSpell lifeSpell = new BeamSpell(beamPrefab, new LifeSpellStatsDecorator(0.5f, 5, new Color(0.54f, 0.91f, 0.54f)));
+        BeamSpell lifeSpell = new BeamSpell(beamPrefab, new LifeSpellStatsDecorator("Life", 0.5f, 5, new Color(0.54f, 0.91f, 0.54f)));
         magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.I), new AddSpellCommand(playerSpellCaster, lifeSpell));
 
-        BeamSpell arcaneSpell = new BeamSpell(beamPrefab, new ArcaneSpellStatsDecorator(0.5f, 5, new Color(0.59f, 0.03f, 0.03f)));
+        BeamSpell arcaneSpell = new BeamSpell(beamPrefab, new ArcaneSpellStatsDecorator("Arcane", 0.5f, 5, new Color(0.59f, 0.03f, 0.03f)));
         magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.K), new AddSpellCommand(playerSpellCaster, arcaneSpell));
 
         Color waterColor = new Color(0.22f, 0.59f, 0.83f);
         IElementEffect waterElementEffect = new WaterElementEffect(waterColor);
-        SpraySpell waterSpell = new SpraySpell(sprayPrefab, sprayParticlePrefab, new WaterSpellStatsDecorator(0.75f, true, waterColor, waterElementEffect));
+        SpraySpell waterSpell = new SpraySpell(sprayPrefab, sprayParticlePrefab, new WaterSpellStatsDecorator("Water", 0.75f, true, waterColor, waterElementEffect));
         magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.O), new AddSpellCommand(playerSpellCaster, waterSpell));
 
         Color fireColor = new Color(1.0f, 0.37f, 0.0f);
         IElementEffect fireElementEffect = new FireElementEffect(fireColor);
-        SpraySpell fireSpell = new SpraySpell(sprayPrefab, sprayParticlePrefab, new FireSpellStatsDecorator(0.75f, 1, fireColor, fireElementEffect));
+        SpraySpell fireSpell = new SpraySpell(sprayPrefab, sprayParticlePrefab, new FireSpellStatsDecorator("Fire", 0.75f, 1, fireColor, fireElementEffect));
         magicInputHandler.BindCommand(() => Input.GetKeyDown(KeyCode.L), new AddSpellCommand(playerSpellCaster, fireSpell));
     
 		// PlayerController

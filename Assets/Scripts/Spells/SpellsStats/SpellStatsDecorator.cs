@@ -1,8 +1,8 @@
-using System;
 using UnityEngine;
 
 public abstract class SpellStatsDecorator : ISpellStats
 {
+    protected string _name;
     protected float _size;
     protected int _damage;
     protected int _heal;
@@ -13,9 +13,10 @@ public abstract class SpellStatsDecorator : ISpellStats
 
     protected ISpellStats _decoratedSpellStats;
     
-    protected SpellStatsDecorator(float size, int damage, int heal, float fireApplication,
+    protected SpellStatsDecorator(string name, float size, int damage, int heal, float fireApplication,
         bool appliesWater, Color color, IElementEffect elementEffect)
     {
+        _name = name;
         _size = size;
         _damage = damage;
         _heal = heal;
@@ -31,6 +32,7 @@ public abstract class SpellStatsDecorator : ISpellStats
         return this;
     }
 
+    public virtual string GetName() => _decoratedSpellStats?.GetName() ?? _name;
     public virtual float GetSize() => _decoratedSpellStats?.GetSize() + _size ?? _size;
     public virtual int GetDamage() => _decoratedSpellStats?.GetDamage() + _damage ?? _damage;
     public virtual int GetHeal() => _decoratedSpellStats?.GetHeal() + _heal ?? _heal;

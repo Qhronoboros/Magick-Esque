@@ -89,10 +89,10 @@ public class CollisionEnemy : IEnemy
 
     public void ApplyElement(ISpellObject spellObject)
     {
+        if (spellObject.ActorSpellStats.GetElementEffect() == null) return;
+        
         if (CurrentElementEffect != null)
             CurrentElementEffect.ProcessElementChange(spellObject.ActorSpellStats);
-
-        if (spellObject.ActorSpellStats.GetElementEffect() == null) return;
         
         CurrentElementEffect = spellObject.ActorSpellStats.GetElementEffect();
         CurrentElementEffect.SetActor(this);
@@ -102,8 +102,6 @@ public class CollisionEnemy : IEnemy
     public void TakeDamage(int damage, Color damageColor)
     {
         if (AttachedGameObject == null) return;
-
-        Debug.Log("Here");
         
         Health -= damage;
         OnHit?.Invoke(Health, damage, AttachedGameObject.transform.position, damageColor);
