@@ -9,12 +9,12 @@ public class Spray : ISpellObject
     private List<IEntity> _spawnedParticles = new List<IEntity>();
     private GameObject _sprayParticlePrefab;
     
+    public bool sprayStopped = false;
+    
     public GameObject AttachedGameObject { get; private set; }
     public Material AttachedMaterial { get; private set; }
     public GameObject Actor { get; private set; }
     public ISpellStats ActorSpellStats { get; private set; }
-
-    public bool sprayStopped = false;
     
     public Spray(GameObject sprayParticlePrefab, GameObject attachedGameObject, GameObject actor, ISpellStats actorSpellStats)
     {
